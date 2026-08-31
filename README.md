@@ -1,2 +1,1 @@
-# Juhair-yooo.github.io
-we are launching soon
+# we are launching soon
