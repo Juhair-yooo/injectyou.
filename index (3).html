@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>inJectyou — its a copy of an os</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#08090E;--bg2:#0B0E16;--bg3:#0F121C;
+    --border:#1E2436;--border2:#2a3050;
+    --red:#ef4444;--red2:#dc2626;--red3:#7f1d1d;
+    --emerald:#10b981;--amber:#f59e0b;
+    --slate1:#f8fafc;--slate2:#e2e8f0;--slate3:#94a3b8;--slate4:#475569;--slate5:#1e293b;
+    --mono:'Courier New',monospace;
+  }
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--slate1);font-family:var(--mono);overflow-x:hidden}
+
+  /* ── SCANLINES ── */
+  body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);pointer-events:none;z-index:9999}
+
+  /* ── BOOT INTRO ── */
+  #boot{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .7s}
+  #boot.fade{opacity:0;pointer-events:none}
+  #boot-log{font-size:13px;line-height:2;max-width:500px;padding:0 24px}
+  #boot-log .ts{color:var(--emerald)}
+  #boot-log .line{opacity:0;transform:translateX(-8px);transition:opacity .2s,transform .2s}
+  #boot-log .line.show{opacity:1;transform:none}
+  #boot-cursor{display:inline-block;width:8px;height:14px;background:var(--slate3);animation:blink 1s step-end infinite;vertical-align:middle}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+  #boot-logo{display:none;flex-direction:column;align-items:center;text-align:center;gap:16px}
+  #boot-logo img{width:160px;filter:drop-shadow(0 0 40px rgba(239,68,68,.6));animation:floaty 3s ease-in-out infinite}
+  #boot-logo h1{font-size:28px;font-weight:900;text-transform:uppercase;letter-spacing:-.02em}
+  #boot-logo p{font-size:11px;color:var(--red);letter-spacing:.3em;text-transform:uppercase}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+  /* ── NAVBAR ── */
+  nav{position:sticky;top:0;z-index:100;background:rgba(8,9,14,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:52px;display:flex;align-items:center;justify-content:space-between}
+  .nav-left{display:flex;align-items:center;gap:20px}
+  .nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--slate1);font-weight:900;font-size:16px}
+  .nav-logo img{width:28px}
+  .kernel-badge{font-size:10px;color:var(--emerald);border:1px solid var(--emerald);border-radius:4px;padding:2px 8px;letter-spacing:.1em;display:flex;align-items:center;gap:5px}
+  .kernel-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .nav-links{display:flex;align-items:center;gap:24px}
+  .nav-links a{color:var(--slate3);text-decoration:none;font-size:13px;transition:color .2s}
+  .nav-links a:hover{color:var(--slate1)}
+  .btn-dl{background:var(--red2);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-family:var(--mono);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;text-decoration:none;transition:background .2s}
+  .btn-dl:hover{background:var(--red)}
+
+  /* ── HERO ── */
+  #hero{min-height:80vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:80px 24px;position:relative;overflow:hidden}
+  #hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 40%,rgba(127,29,29,.25) 0%,transparent 70%);pointer-events:none}
+  .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(30,36,54,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(30,36,54,.3) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+  .hero-inner{position:relative;max-width:700px}
+  .hero-eyebrow{font-size:10px;color:var(--red);letter-spacing:.3em;text-transform:uppercase;margin-bottom:20px}
+  .hero-title{font-size:clamp(36px,6vw,72px);font-weight:900;text-transform:uppercase;letter-spacing:-.03em;line-height:1;margin-bottom:20px}
+  .hero-title span{color:var(--red)}
+  .hero-sub{font-size:14px;color:var(--slate3);margin-bottom:36px;line-height:1.8}
+  .hero-logo{width:120px;margin:0 auto 32px;filter:drop-shadow(0 0 50px rgba(239,68,68,.5));animation:floaty 3s ease-in-out infinite}
+  .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn-primary{background:var(--red2);color:#fff;border:none;padding:12px 28px;border-radius:8px;font-family:var(--mono);font-size:13px;cursor:pointer;transition:background .2s;text-decoration:none;display:inline-block}
+  .btn-primary:hover{background:var(--red)}
+  .btn-secondary{background:transparent;color:var(--slate3);border:1px solid var(--border2);padding:12px 28px;border-radius:8px;font-family:var(--mono);font-size:13px;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+  .btn-secondary:hover{border-color:var(--slate4);color:var(--slate1)}
+
+  /* ── SECTIONS ── */
+  section{padding:80px 24px;max-width:1100px;margin:0 auto}
+  .section-eye{font-size:10px;color:var(--red);letter-spacing:.3em;text-transform:uppercase;margin-bottom:14px}
+  .section-title{font-size:clamp(22px,3.5vw,36px);font-weight:900;text-transform:uppercase;letter-spacing:-.02em;margin-bottom:8px}
+  .section-sub{font-size:14px;color:var(--slate3);margin-bottom:36px;display:flex;align-items:center;gap:8px}
+
+  /* ── OS PREVIEW ── */
+  #os-container{position:relative;height:560px;border-radius:16px;border:1px solid var(--border);background:var(--bg2);overflow:hidden;background-image:linear-gradient(rgba(30,36,54,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(30,36,54,.3) 1px,transparent 1px);background-size:40px 40px}
+  #os-label{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--slate4);letter-spacing:.3em;text-transform:uppercase;pointer-events:none;white-space:nowrap}
+  .win{position:absolute;border-radius:12px;border:1px solid var(--border);background:rgba(15,18,28,.95);backdrop-filter:blur(12px);box-shadow:0 20px 60px rgba(0,0,0,.6);overflow:hidden;cursor:grab;user-select:none;min-width:200px}
+  .win:active{cursor:grabbing}
+  .win-bar{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg2)}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .dot-r{background:#ef4444}.dot-a{background:#f59e0b}.dot-g{background:#10b981}
+  .win-title{margin-left:8px;font-size:11px;color:var(--slate3)}
+  .win-body{padding:14px}
+  .meter-row{margin-bottom:14px}
+  .meter-head{display:flex;justify-content:space-between;font-size:11px;color:var(--slate3);margin-bottom:6px}
+  .meter-val{color:var(--red)}
+  .meter-track{height:7px;border-radius:99px;background:var(--border);overflow:hidden}
+  .meter-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#7f1d1d,#ef4444);transition:width .7s}
+  .proc-table{width:100%;font-size:11px;border-collapse:collapse}
+  .proc-table td{padding:7px 0;border-bottom:1px solid var(--border)}
+  .proc-table tr:last-child td{border:none}
+  .proc-table .pname{color:var(--slate2)}
+  .proc-table .prole{color:var(--slate4)}
+  .proc-table .pmem{color:var(--emerald);text-align:right}
+  .notes-text{font-size:12px;color:var(--slate2);line-height:1.9}
+  .hatcam-body{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .hatcam-body img{width:80px;animation:floaty 3s ease-in-out infinite}
+  .rec-badge{font-size:10px;color:var(--emerald);display:flex;align-items:center;gap:5px}
+  .rec-dot{width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 1.5s ease-in-out infinite}
+
+  /* ── CHANGELOG ── */
+  #changelog-wrap{max-width:680px;position:relative;padding-left:24px}
+  #changelog-wrap::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:1px;background:var(--border)}
+  .cl-entry{position:relative;margin-bottom:40px}
+  .cl-dot{position:absolute;left:-28px;top:4px;width:10px;height:10px;border-radius:50%;border:2px solid var(--bg);background:var(--slate4)}
+  .cl-dot.latest{background:var(--red)}
+  .cl-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}
+  .cl-version{font-size:13px;font-weight:700;color:var(--slate2)}
+  .cl-arrow{color:var(--red)}
+  .cl-date{font-size:11px;color:var(--slate4)}
+  .cl-tag{font-size:9px;letter-spacing:.15em;text-transform:uppercase;padding:2px 8px;border-radius:4px;border:1px solid}
+  .tag-latest{color:#f87171;border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.1)}
+  .tag-major{color:#fbbf24;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1)}
+  .tag-genesis{color:#34d399;border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.1)}
+  .cl-items{list-style:none}
+  .cl-items li{font-size:12px;color:var(--slate3);padding:4px 0;display:flex;gap:8px}
+  .cl-items li::before{content:'+';color:var(--slate4);flex-shrink:0}
+
+  /* ── BENTO ── */
+  .bento-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .bento-card{border:1px solid var(--border);border-radius:12px;background:var(--bg2);padding:24px}
+  .bento-icon{font-size:24px;margin-bottom:14px}
+  .bento-card h3{font-size:14px;font-weight:700;margin-bottom:8px;color:var(--slate1)}
+  .bento-card p{font-size:12px;color:var(--slate3);line-height:1.7}
+
+  /* ── DOWNLOAD ── */
+  #dl-box{border:1px solid var(--border);border-radius:16px;background:var(--bg2);max-width:760px;margin:0 auto;overflow:hidden}
+  .dl-header{padding:36px 36px 28px;border-bottom:1px solid var(--border)}
+  .dl-header h2{font-size:26px;font-weight:900;text-transform:uppercase;margin-bottom:8px}
+  .dl-header p{font-size:12px;color:var(--slate3);line-height:1.7}
+  .dl-vmware-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:4px 12px;font-size:10px;color:#a5b4fc;letter-spacing:.1em;margin-bottom:16px}
+  .dl-body{padding:28px 36px}
+  .dl-file-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+  .dl-file-info{display:flex;align-items:center;gap:14px}
+  .dl-file-icon{width:40px;height:40px;border-radius:8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .dl-file-name{font-size:13px;color:var(--slate1);font-weight:700;margin-bottom:3px}
+  .dl-file-meta{font-size:11px;color:var(--slate4)}
+  .dl-file-meta span{color:var(--emerald)}
+  .btn-dl-vm{background:var(--red2);color:#fff;border:none;padding:11px 22px;border-radius:8px;font-family:var(--mono);font-size:12px;cursor:pointer;transition:background .2s;text-decoration:none;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font-weight:700}
+  .btn-dl-vm:hover{background:var(--red)}
+  .dl-steps-title{font-size:10px;color:var(--slate4);letter-spacing:.2em;text-transform:uppercase;margin-bottom:14px}
+  .dl-step-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+  .dl-step-list li{display:flex;align-items:flex-start;gap:12px;font-size:12px;color:var(--slate3);line-height:1.6}
+  .dl-step-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--red);flex-shrink:0;margin-top:1px}
+  .dl-reqs{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+  .dl-req-chip{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--slate3);display:flex;align-items:center;gap:6px}
+  .dl-req-chip b{color:var(--slate1)}
+
+  /* ── FAQ ── */
+  .faq-list{max-width:680px}
+  .faq-item{border-bottom:1px solid var(--border);padding:20px 0}
+  .faq-q{font-size:13px;color:var(--slate1);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+  .faq-q .chevron{transition:transform .3s;color:var(--slate4)}
+  .faq-q.open .chevron{transform:rotate(180deg)}
+  .faq-a{font-size:12px;color:var(--slate3);line-height:1.8;max-height:0;overflow:hidden;transition:max-height .3s,padding .3s}
+  .faq-a.open{max-height:200px;padding-top:12px}
+
+  /* ── FOOTER ── */
+  footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center;font-size:11px;color:var(--slate4)}
+  footer .konami-hint{margin-top:8px;letter-spacing:.3em;color:var(--slate5)}
+
+  /* ── EASTER EGG ── */
+  #easter{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.96);backdrop-filter:blur(8px);flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer}
+  #easter.show{display:flex}
+  #easter img{width:200px;filter:drop-shadow(0 0 50px rgba(239,68,68,.7));animation:floaty 3s ease-in-out infinite,spinIn .6s cubic-bezier(.34,1.56,.64,1) both}
+  @keyframes spinIn{from{transform:scale(.4) rotate(-180deg)}to{transform:scale(1) rotate(0)}}
+  #easter h2{font-size:clamp(40px,8vw,80px);font-weight:900;text-transform:uppercase;color:var(--red);margin-top:32px;letter-spacing:-.03em}
+  #easter p{font-size:12px;color:var(--slate3);margin-top:16px;letter-spacing:.25em;text-transform:uppercase}
+  #easter .dismiss{font-size:10px;color:var(--slate5);margin-top:40px;letter-spacing:.3em;text-transform:uppercase}
+
+  /* ── TERMINAL SIM ── */
+  #terminal-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 24px;font-size:12px;line-height:2;max-width:680px}
+  .t-line{color:var(--slate3)}
+  .t-line .prompt{color:var(--red)}
+  .t-line .cmd{color:var(--slate1)}
+  .t-line .out{color:var(--emerald)}
+  .t-cursor{display:inline-block;width:7px;height:13px;background:var(--slate3);animation:blink 1s step-end infinite;vertical-align:middle}
+
+  @media(max-width:600px){
+    nav{padding:0 16px}
+    .nav-links a:not(.btn-dl){display:none}
+    #os-container{height:420px}
+    .win{transform:scale(.85);transform-origin:top left}
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ BOOT INTRO ═══════════════ -->
+<div id="boot">
+  <div id="boot-log"></div>
+  <div id="boot-logo">
+    <img src="logo.png" alt="inJectyou" onerror="this.style.display='none'"/>
+    <h1>welcome back</h1>
+    <p>// the anomaly is online</p>
+  </div>
+</div>
+
+<!-- ═══════════════ NAVBAR ═══════════════ -->
+<nav>
+  <div class="nav-left">
+    <a class="nav-logo" href="#">
+      <img src="logo.png" alt="ij" onerror="this.style.display='none'"/>
+      in<span style="color:var(--red)">Ject</span>you
+    </a>
+    <div class="kernel-badge">KERNEL ACTIVE V4.0.2</div>
+  </div>
+  <div class="nav-links">
+    <a class="btn-dl btn-primary" href="https://drive.google.com/file/d/1USSSi_7eD3lCcTMhWVbcQNvohoUCQnvs/view" target="_blank">⬇ download for VMware</a>
+  </div>
+</nav>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<div id="hero">
+  <div class="grid-bg"></div>
+  <div class="hero-inner">
+    <p class="hero-eyebrow">// kernel active v4.0.2</p>
+    <img class="hero-logo" src="logo.png" alt="inJectyou" onerror="this.style.display='none'"/>
+    <h1 class="hero-title">in<span>Ject</span>you</h1>
+    <p class="hero-sub">its a copy of an os.<br/>if you know, you know.</p>
+    <div class="hero-btns">
+      <a class="btn-primary" href="https://drive.google.com/file/d/1USSSi_7eD3lCcTMhWVbcQNvohoUCQnvs/view" target="_blank">⬇ download for VMware Workstation</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ OS PREVIEW ═══════════════ -->
+<section id="os-section">
+  <p class="section-eye">// peek inside</p>
+  <h2 class="section-title">The copy, running live</h2>
+  <p class="section-sub">🖥 drag the windows around. it's your VM now.</p>
+
+  <div id="os-container">
+    <div id="os-label">inJectyou OS · live preview</div>
+
+    <!-- Process Manager Window -->
+    <div class="win" id="win-proc" style="left:40px;top:60px;width:320px">
+      <div class="win-bar">
+        <div class="dot dot-r"></div><div class="dot dot-a"></div><div class="dot dot-g"></div>
+        <span class="win-title">process manager</span>
+      </div>
+      <div class="win-body">
+        <div class="meter-row">
+          <div class="meter-head"><span>virtual cpu</span><span class="meter-val" id="cpu-val">23%</span></div>
+          <div class="meter-track"><div class="meter-fill" id="cpu-bar" style="width:23%"></div></div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-head"><span>shadow ram</span><span class="meter-val" id="ram-val">38%</span></div>
+          <div class="meter-track"><div class="meter-fill" id="ram-bar" style="width:38%"></div></div>
+        </div>
+        <table class="proc-table">
+          <tr><td class="pname">hat.sys</td><td class="prole">guardian</td><td class="pmem">12.1mb</td></tr>
+          <tr><td class="pname">inject.ko</td><td class="prole">kernel mod</td><td class="pmem">8.4mb</td></tr>
+          <tr><td class="pname">vmkeeper</td><td class="prole">watcher</td><td class="pmem">6.9mb</td></tr>
+          <tr><td class="pname">youknow.d</td><td class="prole">daemon</td><td class="pmem">4.2mb</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Notes Window -->
+    <div class="win" id="win-notes" style="right:40px;top:160px;width:280px">
+      <div class="win-bar">
+        <div class="dot dot-r"></div><div class="dot dot-a"></div><div class="dot dot-g"></div>
+        <span class="win-title">notes.txt</span>
+      </div>
+      <div class="win-body">
+        <p class="notes-text">
+          its a copy of an os if you know you know.<br/><br/>
+          - do not feed the hat after midnight<br/>
+          - the hypervisor suspects nothing<br/>
+          - uptime is a state of mind
+        </p>
+      </div>
+    </div>
+
+    <!-- Hatcam Window -->
+    <div class="win" id="win-hatcam" style="left:38%;bottom:30px;width:200px">
+      <div class="win-bar">
+        <div class="dot dot-r"></div><div class="dot dot-a"></div><div class="dot dot-g"></div>
+        <span class="win-title">hatcam — live</span>
+      </div>
+      <div class="win-body">
+        <div class="hatcam-body">
+          <img src="logo.png" alt="hatcam" onerror="this.textContent='🎩'"/>
+          <div class="rec-badge"><div class="rec-dot"></div> REC · anomaly visible</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ TERMINAL SIM ═══════════════ -->
+<section>
+  <p class="section-eye">// shell access</p>
+  <h2 class="section-title">Terminal</h2>
+  <div id="terminal-box">
+    <div class="t-line"><span class="prompt">root@injectyou:~$</span> <span class="cmd">uname -a</span></div>
+    <div class="t-line"><span class="out">inJectyou 4.0.2-shadow #1 SMP PREEMPT anomaly online</span></div>
+    <div class="t-line"><span class="prompt">root@injectyou:~$</span> <span class="cmd">cat /proc/hat</span></div>
+    <div class="t-line"><span class="out">guardian · brim stable · hypervisor: unaware</span></div>
+    <div class="t-line"><span class="prompt">root@injectyou:~$</span> <span class="cmd">ls /var/known/</span></div>
+    <div class="t-line"><span class="out">you/  know/  always.did</span></div>
+    <div class="t-line"><span class="prompt">root@injectyou:~$</span> <span id="t-typing"></span><span class="t-cursor"></span></div>
+  </div>
+</section>
+
+<!-- ═══════════════ BENTO ═══════════════ -->
+<section>
+  <p class="section-eye">// features</p>
+  <h2 class="section-title">What's inside</h2>
+  <div class="bento-grid">
+    <div class="bento-card">
+      <div class="bento-icon">🎩</div>
+      <h3>hat.sys guardian</h3>
+      <p>persistent kernel module that watches the brim at all times. the hypervisor sees nothing unusual.</p>
+    </div>
+    <div class="bento-card">
+      <div class="bento-icon">💉</div>
+      <h3>inject.ko</h3>
+      <p>deep kernel injection layer. runs before anything else does. zero-trace mode is now default.</p>
+    </div>
+    <div class="bento-card">
+      <div class="bento-icon">👁</div>
+      <h3>zero-trace mode</h3>
+      <p>the hypervisor heard nothing. the logs show nothing. uptime is a state of mind.</p>
+    </div>
+    <div class="bento-card">
+      <div class="bento-icon">🧠</div>
+      <h3>memory injection v2</h3>
+      <p>shadow ram management with 38mb total footprint. a diet, but no compromises.</p>
+    </div>
+    <div class="bento-card">
+      <div class="bento-icon">🔁</div>
+      <h3>vmkeeper watcher</h3>
+      <p>monitors the virtual layer continuously. if something moves, vmkeeper already knew.</p>
+    </div>
+    <div class="bento-card">
+      <div class="bento-icon">📋</div>
+      <h3>copy integrity</h3>
+      <p>verifying copy integrity...... pure. one hat. one face. one copy. always was.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ CHANGELOG ═══════════════ -->
+<section id="changelog-section">
+  <p class="section-eye">// version history</p>
+  <h2 class="section-title">Changelog</h2>
+  <div id="changelog-wrap">
+
+    <div class="cl-entry">
+      <div class="cl-dot latest"></div>
+      <div class="cl-head">
+        <span class="cl-arrow">→</span>
+        <span class="cl-version">v4.0.2</span>
+        <span class="cl-date">2026-08-19</span>
+        <span class="cl-tag tag-latest">LATEST</span>
+      </div>
+      <ul class="cl-items">
+        <li>patched the hat render loop — brim no longer flickers on boot</li>
+        <li>moved distribution to the drive. checksum row retired, link row born</li>
+        <li>quieter on boot. the hypervisor heard nothing</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-dot"></div>
+      <div class="cl-head">
+        <span class="cl-arrow">→</span>
+        <span class="cl-version">v4.0.0</span>
+        <span class="cl-date">2026-06-02</span>
+        <span class="cl-tag tag-major">MAJOR</span>
+      </div>
+      <ul class="cl-items">
+        <li>shadow kernel rewritten from scratch</li>
+        <li>4D landing page shipped — the hat learned to float</li>
+        <li>zero-trace mode now default, not optional</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-dot"></div>
+      <div class="cl-head">
+        <span class="cl-arrow">→</span>
+        <span class="cl-version">v3.3.7</span>
+        <span class="cl-date">2026-02-14</span>
+      </div>
+      <ul class="cl-items">
+        <li>memory injection matrix v2</li>
+        <li>went on a diet: 38mb total footprint</li>
+        <li>valentine's release. we love those who know</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-dot"></div>
+      <div class="cl-head">
+        <span class="cl-arrow">→</span>
+        <span class="cl-version">v1.0.0</span>
+        <span class="cl-date">2025-10-31</span>
+        <span class="cl-tag tag-genesis">GENESIS</span>
+      </div>
+      <ul class="cl-items">
+        <li>first copy leaks into the wild</li>
+        <li>halloween, obviously</li>
+        <li>one hat. one face. one copy.</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ DOWNLOAD ═══════════════ -->
+<section>
+  <p class="section-eye">// get the copy</p>
+  <h2 class="section-title" style="margin-bottom:32px">Download</h2>
+  <div id="dl-box">
+
+    <div class="dl-header">
+      <div class="dl-vmware-badge">⬡ VMware compatible · v4.0.2</div>
+      <h2>inJectyou OS</h2>
+      <p>its a copy of an os. import into VMware and boot.<br/>the hypervisor will suspect nothing. it never does.</p>
+    </div>
+
+    <div class="dl-body">
+
+      <!-- File row -->
+      <div class="dl-file-row">
+        <div class="dl-file-info">
+          <div class="dl-file-icon">💾</div>
+          <div>
+            <div class="dl-file-name">injectyou-v4.0.2.vmware</div>
+            <div class="dl-file-meta">VMware image &nbsp;·&nbsp; v4.0.2 &nbsp;·&nbsp; <span>● latest</span></div>
+          </div>
+        </div>
+        <a class="btn-dl-vm" href="https://drive.google.com/file/d/1USSSi_7eD3lCcTMhWVbcQNvohoUCQnvs/view" target="_blank">
+          ⬇ download
+        </a>
+      </div>
+
+      <!-- How to import steps -->
+      <div class="dl-steps-title">// how to import into vmware</div>
+      <ul class="dl-step-list">
+        <li>
+          <div class="dl-step-num">1</div>
+          <div>Download the file from the link above and save it to your computer.</div>
+        </li>
+        <li>
+          <div class="dl-step-num">2</div>
+          <div>Open <b style="color:var(--slate1)">VMware Workstation</b> (or VMware Player). Click <b style="color:var(--slate1)">Open a Virtual Machine</b>.</div>
+        </li>
+        <li>
+          <div class="dl-step-num">3</div>
+          <div>Browse to the downloaded file, select it, and click <b style="color:var(--slate1)">Open</b>. VMware will import it automatically.</div>
+        </li>
+        <li>
+          <div class="dl-step-num">4</div>
+          <div>Click <b style="color:var(--slate1)">Power On</b>. inJectyou will boot. the anomaly is online.</div>
+        </li>
+      </ul>
+
+      <!-- Requirements chips -->
+      <div class="dl-reqs">
+        <div class="dl-req-chip">🖥 <b>VMware</b> Workstation / Player</div>
+        <div class="dl-req-chip">🧠 <b>4GB</b> RAM minimum</div>
+        <div class="dl-req-chip">💽 <b>20GB</b> disk space</div>
+        <div class="dl-req-chip">⚙️ <b>x64</b> CPU required</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FAQ ═══════════════ -->
+<section>
+  <p class="section-eye">// questions</p>
+  <h2 class="section-title" style="margin-bottom:32px">FAQ</h2>
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">who is the owner of inJectyou? <span class="chevron">▾</span></div>
+      <div class="faq-a">juhair is the owner of inJectyou. one hat. one owner. always was.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">what is injectyou? <span class="chevron">▾</span></div>
+      <div class="faq-a">its a copy of an os. if you know, you know. built for those who already suspected something was different about their virtualization layer.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">does the hypervisor know? <span class="chevron">▾</span></div>
+      <div class="faq-a">the hypervisor heard nothing. zero-trace mode has been default since v4.0.0. the logs are clean. the brim is stable.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">what is hat.sys? <span class="chevron">▾</span></div>
+      <div class="faq-a">hat.sys is the guardian kernel module. it watches the brim at all times and ensures the copy remains pure. do not feed it after midnight.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">is this for research only? <span class="chevron">▾</span></div>
+      <div class="faq-a">for virtualization research only. one hat. one face. one copy. you were always one of them.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer>
+  <p>its a copy of an os if you know you know · for virtualization research only</p>
+  <p class="konami-hint">↑↑↓↓←→←→ b a</p>
+</footer>
+
+<!-- ═══════════════ EASTER EGG ═══════════════ -->
+<div id="easter" onclick="closeEaster()">
+  <img src="logo.png" alt="the hat knows" onerror="this.style.display='none'"/>
+  <h2>you know.</h2>
+  <p>its a copy of an os. and you always knew.</p>
+  <div class="dismiss">click anywhere to go back to not knowing</div>
+</div>
+
+<script>
+// ── BOOT INTRO ──
+const BOOT_LINES = [
+  {ts:'[0.000000]', msg:' injectyou bootloader v4.0.2'},
+  {ts:'[0.042013]', msg:' mounting virtual layer........ ok'},
+  {ts:'[0.133742]', msg:' hiding from hypervisor........ ok'},
+  {ts:'[0.388410]', msg:' loading hat.sys............... ok'},
+  {ts:'[0.512009]', msg:' verifying copy integrity...... pure'},
+  {ts:'[0.710666]', msg:' if you know you know.......... confirmed'},
+  {ts:'[0.984201]', msg:' starting anomaly.............. online'},
+];
+
+(function runBoot(){
+  if(sessionStorage.getItem('ij_booted')==='1'){
+    document.getElementById('boot').style.display='none';
+    return;
+  }
+  document.body.style.overflow='hidden';
+  const log = document.getElementById('boot-log');
+  const logoEl = document.getElementById('boot-logo');
+  let i = 0;
+
+  function addLine(){
+    if(i >= BOOT_LINES.length){
+      // show logo
+      setTimeout(()=>{
+        log.style.display='none';
+        logoEl.style.display='flex';
+      }, 300);
+      setTimeout(()=>{
+        document.getElementById('boot').classList.add('fade');
+      }, 2100);
+      setTimeout(()=>{
+        document.getElementById('boot').style.display='none';
+        document.body.style.overflow='';
+        sessionStorage.setItem('ij_booted','1');
+      }, 2800);
+      return;
+    }
+    const l = BOOT_LINES[i];
+    const p = document.createElement('p');
+    p.className='line';
+    p.innerHTML=`<span class="ts">${l.ts}</span>${l.msg}`;
+    log.appendChild(p);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>p.classList.add('show')));
+    i++;
+    setTimeout(addLine, 240);
+  }
+  addLine();
+})();
+
+// ── DRAGGABLE WINDOWS ──
+function makeDraggable(el){
+  let dx=0,dy=0,ox=0,oy=0,dragging=false;
+  const container = document.getElementById('os-container');
+
+  el.addEventListener('mousedown', e=>{
+    // bring to front
+    document.querySelectorAll('.win').forEach(w=>w.style.zIndex=10);
+    el.style.zIndex=30;
+    ox=e.clientX; oy=e.clientY;
+    const rect=el.getBoundingClientRect();
+    dx=e.clientX-rect.left; dy=e.clientY-rect.top;
+    dragging=true;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    const cr=container.getBoundingClientRect();
+    let nx=e.clientX-cr.left-dx;
+    let ny=e.clientY-cr.top-dy;
+    nx=Math.max(0,Math.min(nx,cr.width-el.offsetWidth));
+    ny=Math.max(0,Math.min(ny,cr.height-el.offsetHeight));
+    el.style.left=nx+'px'; el.style.top=ny+'px';
+    el.style.right='auto'; el.style.bottom='auto';
+  });
+
+  document.addEventListener('mouseup', ()=>{ dragging=false; });
+
+  // touch support
+  el.addEventListener('touchstart', e=>{
+    document.querySelectorAll('.win').forEach(w=>w.style.zIndex=10);
+    el.style.zIndex=30;
+    const t=e.touches[0];
+    const rect=el.getBoundingClientRect();
+    dx=t.clientX-rect.left; dy=t.clientY-rect.top;
+    dragging=true;
+  },{passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!dragging) return;
+    const t=e.touches[0];
+    const cr=container.getBoundingClientRect();
+    let nx=t.clientX-cr.left-dx;
+    let ny=t.clientY-cr.top-dy;
+    nx=Math.max(0,Math.min(nx,cr.width-el.offsetWidth));
+    ny=Math.max(0,Math.min(ny,cr.height-el.offsetHeight));
+    el.style.left=nx+'px'; el.style.top=ny+'px';
+    el.style.right='auto'; el.style.bottom='auto';
+    e.preventDefault();
+  },{passive:false});
+
+  document.addEventListener('touchend', ()=>{ dragging=false; });
+}
+
+document.querySelectorAll('.win').forEach(makeDraggable);
+
+// ── LIVE METERS ──
+let cpu=23, ram=38;
+function updateMeters(){
+  cpu=Math.min(97,Math.max(4,Math.round(cpu+(Math.random()-.5)*22)));
+  ram=Math.min(94,Math.max(21,Math.round(ram+(Math.random()-.5)*10)));
+  document.getElementById('cpu-val').textContent=cpu+'%';
+  document.getElementById('ram-val').textContent=ram+'%';
+  document.getElementById('cpu-bar').style.width=cpu+'%';
+  document.getElementById('ram-bar').style.width=ram+'%';
+}
+setInterval(updateMeters, 900);
+
+// ── TERMINAL TYPING ──
+const CMDS=['./youknow --verify','cat /etc/hat.conf','ps aux | grep anomaly'];
+let ci=0, cc=0, typing=true;
+const tEl=document.getElementById('t-typing');
+function typeLoop(){
+  if(!tEl) return;
+  if(typing){
+    if(cc<=CMDS[ci].length){ tEl.textContent=CMDS[ci].slice(0,cc); cc++; setTimeout(typeLoop,80); }
+    else{ typing=false; setTimeout(typeLoop,1400); }
+  } else {
+    if(cc>0){ tEl.textContent=CMDS[ci].slice(0,cc-1); cc--; setTimeout(typeLoop,40); }
+    else{ typing=true; ci=(ci+1)%CMDS.length; setTimeout(typeLoop,300); }
+  }
+}
+setTimeout(typeLoop,1000);
+
+// ── FAQ ──
+function toggleFaq(el){
+  const a=el.nextElementSibling;
+  const open=a.classList.toggle('open');
+  el.classList.toggle('open',open);
+}
+
+// ── EASTER EGG (Konami) ──
+const KONAMI=['arrowup','arrowup','arrowdown','arrowdown','arrowleft','arrowright','arrowleft','arrowright','b','a'];
+let kprog=[];
+document.addEventListener('keydown',e=>{
+  kprog=[...kprog,e.key.toLowerCase()].slice(-KONAMI.length);
+  if(kprog.join(',')===KONAMI.join(',')){ openEaster(); kprog=[]; }
+  if(e.key==='Escape') closeEaster();
+});
+function openEaster(){ document.getElementById('easter').classList.add('show'); }
+function closeEaster(){ document.getElementById('easter').classList.remove('show'); }
+</script>
+</body>
+</html>
