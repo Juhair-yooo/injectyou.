@@ -1,0 +1,9 @@
+{
+  "name": "injectyou-design-preview",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Private inJectyou website design prototype. No live backend or authentication.",
+  "scripts": { "start": "node serve.mjs", "check": "node validate.mjs" },
+  "engines": { "node": ">=18" }
+}

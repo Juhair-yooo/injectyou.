@@ -1,0 +1,2 @@
+/* Local, dependency-free baseline. Intentionally no remote font or analytics requests. */
+img,svg{max-width:100%}button{color:inherit}textarea{resize:vertical}dialog::backdrop{background:#172b2670}
