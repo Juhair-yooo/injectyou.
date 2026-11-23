@@ -1,0 +1,3 @@
+-- Disabled: the previous draft exposed privileged functions in the public API.
+-- Design and test authorization in a non-exposed schema before adding endpoints.
+-- This file intentionally applies no changes.
