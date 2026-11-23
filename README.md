@@ -1,42 +1,29 @@
 # inJectyou
 
-A responsive website design prototype for a platform that connects company projects with interns through a platform administrator.
+This is an in-progress website for a platform connecting interns with company projects. It is not ready for production use.
 
-## Preview locally
+## Current state
 
-From this directory, start the bundled local-only preview server with Node.js:
+The account screens use the public Supabase JavaScript SDK and the project's publishable key. Intern and company sign-up and sign-in call Supabase Auth. After sign-in, a user can create their own account record; company accounts start pending. The installed database account policies restrict account reads to the owner and do not permit self-registration as an administrator. These flows still require end-to-end verification with confirmed accounts and properly configured email redirects.
 
-```sh
-node serve.mjs
-```
+Project applications, company project management, administrative review, payments, file uploads, certificates and messaging are not connected to production. The older `portal.js` is a fictional local demo and is not loaded by the account screens. Do not collect confidential project data or invite real users until the complete service is implemented and reviewed.
 
-Open [http://127.0.0.1:4173](http://127.0.0.1:4173). The bundled server binds only to the local computer. Use an HTTP server rather than opening `index.html` directly: the prototype loads JavaScript modules.
+## Local preview
 
-## Design scope
+Run `node serve.mjs` and visit `http://127.0.0.1:4173`. The server is only for local preview. It serves a restricted set of browser assets and is not a production hosting server. Account access requires network access to the Supabase project. The official Supabase JavaScript SDK is included locally at version 2.119.0; its license is in SUPABASE-LICENSE.txt.
 
-- Public website and entry points for interns and companies.
-- Intern workspace for project discovery, applications, work, and progress.
-- Company workspace for briefs, delivery review, and project status.
-- Admin workspace for the handoffs between companies and interns.
+The Supabase publishable key is intended for browser use; never add a secret or service-role key to the repository or browser code. Configure the final site URL and allowed redirect URLs in Supabase Auth before testing email confirmations on a deployed site. Production hosting must provide HTTPS and an appropriate Content Security Policy.
 
-Each workspace has a separate sign-in preview. Admin is absent from public signup, and there is no role switcher inside the dashboards. The session gate is a **prototype navigation control**, not authentication or authorization. All names, project records, amounts, and outcomes are illustrative demo content. Company billing and intern fees are presented separately in their respective views, but a client-side prototype is not a secure place to store private information. Exit workspace clears the preview role for this tab.
+## Checks
 
-This is the design stage. It does not provide production accounts, server-side access control, real identity verification, payment processing, actual project delivery, or a production database. Do not enter real passwords, payment details, or identity documents. Any simulated submission or payment changes only the prototype state.
+Run `node validate.mjs` for asset references, JavaScript syntax, branding and approved runtime dependencies. `node database/test.mjs` tests the separate local SQLite schema; it does not verify the remote Supabase database or its access policies. End-to-end authentication and authorization tests remain necessary.
 
-## Source and hosting
+Keep this source in a private repository unless the owner chooses otherwise. The SQLite file and environment files are excluded by `.gitignore`.
 
-The website uses static HTML, CSS, and JavaScript, with relative asset paths and hash navigation. It needs no dependency installation or build step.
 
-Keep this source in a **private GitHub repository**, as requested. Do not enable public hosting for this design stage. Real private admin and user accounts require a backend with server-side authorization before launch. Hash routes remain on the same entry document, so a later static design preview would not require server route rewrites; that does not provide access security.
+## Project workflows (database installed)
 
-## Validation
+`database/company-briefs.sql` contains a proposed migration for private company briefs, administrator company review, public-to-intern opportunities, and private applications. It was applied to the inJectyou Supabase project on 2026-11-23. Local PostgreSQL tests checked representative role isolation, and live anonymous requests to the account and project tables were denied. Authenticated end-to-end tests against the live project are still required. Admin accounts must be provisioned separately by a trusted operator; users cannot grant themselves the admin role.
 
-With Node.js installed, run:
+This migration does not implement file storage, delivery review, payment processing, payout, certificates, notifications or a full audit trail. Do not use it as evidence that the overall service is production-ready.
 
-```sh
-node validate.mjs
-```
-
-This checks local asset/import references, JavaScript syntax, the product name, and accidental external runtime dependencies. It is not a substitute for checking responsive layouts and interactions in a browser.
-
-Before production, implement and test server-side permissions, authentication, storage, company verification, submission handling, payment workflows, certificate verification, and the relevant operating policies.

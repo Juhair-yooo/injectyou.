@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, extname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const entry = resolve(root, 'index.html');
@@ -34,6 +35,13 @@ function inspect(path) {
   if (!['.html', '.js', '.mjs', '.css', '.svg'].includes(extension)) return;
   const text = readFileSync(path, 'utf8');
   const name = relative(root, path);
+  if (name === 'supabase-sdk.js') {
+    const hash = createHash('sha256').update(readFileSync(path)).digest('hex');
+    if (hash !== 'a867edbcfb029370aeec7223dd6180b560b621fbe3bc64c6584fb0369d1b7bce') errors.push('The pinned Supabase SDK does not match the verified package.');
+    const syntax = spawnSync(process.execPath, ['--check', path], { encoding: 'utf8', windowsHide: true });
+    if (syntax.status !== 0) errors.push('The pinned Supabase SDK failed its syntax check.');
+    return;
+  }
   if (/\bRELAY\b/i.test(text)) errors.push(`${name} still contains the former product name.`);
   if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(text)) {
     errors.push(`${name} contains private-key material.`);
