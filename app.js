@@ -114,4 +114,7 @@ document.addEventListener('submit',async e=>{
   }
  } catch(err) {errorEl.textContent=err.message||'Something went wrong. Please try again.';} finally {button.disabled=false;}
 });
-window.addEventListener('hashchange',route);route();
+// Let Supabase process an email-confirmation callback before the hash router
+// reads or changes the URL; otherwise it can erase the callback parameters.
+const startRouting = () => { window.addEventListener('hashchange', route); route(); };
+client.auth.getSession().then(startRouting, startRouting);
