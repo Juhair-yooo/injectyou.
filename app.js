@@ -65,7 +65,7 @@ async function getAccount(user) {
 async function route() {
  const ticket=++routeTicket, path=(location.hash.replace(/^#\/?/,'')||'').split('/');
  if(!path[0]) {root.innerHTML=landing.innerHTML;renderCards();return;}
- if(path[0]==='join'||path[0]==='signin') {if(['intern','company'].includes(path[1]))authForm(path[1],path[0]==='signin');else choice(path[0]==='signin');return;}
+ if(['join','signin','admin-login','workspace','setup'].includes(path[0])) {authLayout('<p class="eyebrow">COMING SOON</p><h2>We’re getting things ready.</h2><p>Accounts are not open yet. Please check back when inJectyou launches.</p><a class="button button-primary" href="#/">Return to home <span>↗</span></a>');return;}
  if(path[0]==='admin-login'){authForm('admin',true);return;}
  if(path[0]==='workspace') {
   authLayout('<p>Opening your account…</p>');
